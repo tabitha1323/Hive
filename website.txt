@@ -1,0 +1,40 @@
+Dataset:
+
+URL         USER        TIMESTAMP
+yahoo.com      A    2017-01-01 01:12:13
+google.com     B    2017-01-01 02:12:13
+dezyre.com     C    2017-01-01 03:12:13
+
+Question -  Log file contains entries like user A visited page 1, user B visited page 3, user C visited page 2, user D visited page no 4 . How will you implement a Hadoop job for this to answer the following queries in real-time –   Which page was visited by user C more than 4 times in a day and Which page was visited by only one user exactly 3 times in a day?
+
+Answer:
+CREATE  EXTERNAL TABLE website_demo_data
+(urls varchar(255),
+users varchar(20),
+visit_time TIMESTAMP
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY "\t"
+LINES TERMINATED BY "\n"
+LOCATION "hdfs://dezyrecluster/dezyre"
+
+Which page was visited by user C more than 4 times in a day?
+
+SELECT urls, day(visit_time) AS day_date, count(*) AS n_of_visits
+FROM website_demo_data
+WHERE users = 'C'
+GROUP BY urls, day(visit_time)
+HAVING count(*) > 4;
+
+Which page was visited by only one user exactly 3 times in a day?
+
+SELECT a.urls, day(a.visit_time) AS day_date, count(*) AS n_of_visits
+FROM website_demo_data a
+JOIN
+(SELECT urls, COUNT(DISTINCT users) distinct_users
+FROM website_demo_data
+GROUP BY urls
+HAVING COUNT(DISTINCT users) = 1) b
+ON a.urls = b.urls
+GROUP BY a.urls, day(a.visit_time)
+HAVING COUNT(*) = 3;
